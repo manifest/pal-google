@@ -1,0 +1,13 @@
+{application, pal_google_oauth2, [
+	{description, "Pragmatic Authentication Library: Google OAuth2 workflows"},
+	{vsn, "0.1.0"},
+	{modules, []},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		hackney,
+		pal_oauth2
+	]},
+	{env, []}
+]}.
