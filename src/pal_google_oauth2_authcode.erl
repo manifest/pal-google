@@ -49,7 +49,7 @@
 -spec init(options()) -> handler(pal_oauth2_authcode:workflow()).
 init(Opts) ->
 	Opts2 =
-		pt_mlist:merge(
+		pt_kvterm:merge(
 			#{authorization_uri => <<"https://accounts.google.com/o/oauth2/auth">>,
 				access_token_uri  => <<"https://accounts.google.com/o/oauth2/token">>,
 				scope             => [openid, email]},

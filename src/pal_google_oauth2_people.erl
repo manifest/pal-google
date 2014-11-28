@@ -68,7 +68,7 @@
 
 -spec init(pal_workflow:options()) -> pal_workflow:handler(workflow()).
 init(Opts) ->
-	State = #state{req_opts = pt_mlist:get(request_options, Opts, [{follow_redirect, true}])},
+	State = #state{req_opts = pt_kvterm:get(request_options, Opts, [{follow_redirect, true}])},
 	pal_authentication:init({{?MODULE, State}, Opts}).
 
 -spec authenticate(input(), Req, workflow()) -> {pal_workflow:response(), Req} when Req :: cowboy_req:req().
