@@ -1,7 +1,7 @@
 %% ------------------------------------------------------------------
 %% The MIT License
 %%
-%% Copyright (c) 2014 Andrei Nesterov <ae.nesterov@gmail.com>
+%% Copyright (c) 2014-2015 Andrei Nesterov <ae.nesterov@gmail.com>
 %%
 %% Permission is hereby granted, free of charge, to any person obtaining a copy
 %% of this software and associated documentation files (the "Software"), to
@@ -24,14 +24,18 @@
 
 -module(pal_google_oauth2_people).
 -behaviour(pal_authentication).
+-behaviour(pal_workflow).
+
+%% Workflow callbacks
+-export([
+	decl/0
+]).
 
 %% Authentication callbacks
 -export([
-	init/1,
-	authenticate/3,
+	authenticate/4,
 	uid/1,
-	info/1,
-	extra/1
+	info/2
 ]).
 
 %% Definitions
@@ -55,96 +59,73 @@
 -define(GOOGLE, <<"google">>).
 
 %% Types
--type input()    :: #{credentials => #{access_token => binary()}}.
--type workflow() :: pal_authentication:workflow().
+-type data() :: #{access_token => binary()}.
 
--record(state, {
-	req_opts :: list()
-}).
+%% ==================================================================
+%% Workflow callbacks
+%% ==================================================================
+
+-spec decl() -> pt_workflow:declaration().
+decl() ->
+	Opts =
+		#{request_options => [{follow_redirect, true}]},
+
+	{pal_authentication, ?MODULE, Opts}.
 
 %% ==================================================================
 %% Authentication callbacks
 %% ==================================================================
 
--spec init(pal_workflow:options()) -> pal_workflow:handler(workflow()).
-init(Opts) ->
-	State = #state{req_opts = pt_kvterm:get(request_options, Opts, [{follow_redirect, true}])},
-	pal_authentication:init({{?MODULE, State}, Opts}).
-
--spec authenticate(input(), Req, workflow()) -> {pal_workflow:response(), Req} when Req :: cowboy_req:req().
-authenticate(#{credentials := #{access_token := Token}}, Req, W) ->
+-spec authenticate(list(module()), data(), map(), map()) -> pal_authentication:result().
+authenticate(_, #{access_token := Token}, _, #{request_options := ReqOpts}) ->
 	Uri = <<?INFO_URI/binary, $?, ?ACCESS_TOKEN/binary, $=, Token/binary>>,
-	State = pal_authentication:handler_state(W),
-	Resp =
-		case hackney:get(Uri, [], <<>>, State#state.req_opts) of
-			{ok, 200, _, Ref} ->
-				pal_oauth2:from_json(Ref, fun(M) ->
-					M
-				end);
-			{ok, _, _, Ref} ->
-				pal_oauth2:from_json(Ref, fun(M) ->
-					{fail, M}
-				end);
-			{error, Reason} ->
-				Message = <<"Google People request failed.">>,
-				error_logger:error_report([{message, Message}, {reason, Reason}]),
-				{fail, Message}
-		end,
-	
-	{Resp, Req}.
+	case hackney:get(Uri, [], <<>>, ReqOpts) of
+		{ok, 200, _, Ref} ->
+			{ok, Body} = hackney:body(Ref),
+			{ok, jsx:decode(Body)};
+		{ok, _, _, Ref} ->
+			{ok, Body} = hackney:body(Ref),
+			{error, {google_plus, jsx:decode(Body)}};
+		{error, Reason} ->
+			throw({bad_req, Reason})
+	end.
 
--spec uid(workflow()) -> binary().
-uid(W) ->
-	pt_map:get(?ID, pal_authentication:raw_info(W)).
+-spec uid(pal_authentication:rawdata()) -> binary().
+uid(Data) ->
+	pt_kvlist:get(?ID, Data).
 
--spec info(workflow()) -> map().
-info(W) ->
-	RawInfo = pal_authentication:raw_info(W),
-	Put =
-		fun
-			(_, undefined, M) -> M;
-			(Key, Val, M)     -> maps:put(Key, Val, M)
-		end,
+-spec info(pal_authentication:rawdata(), map()) -> map().
+info([{?DISPLAY_NAME, Val}|T], M) -> info(T, M#{name => Val});
+info([{?NAME, Val}|T], M)         -> info(T, name(Val, M));
+info([{?IMAGE, Val}|T], M)        -> info(T, image(Val, M));
+info([{?URLS, Val}|T], M)         -> info(T, M#{urls => urls(Val, maps:get(urls, M, #{}))});
+info([{?URL, Val}|T], M)          -> info(T, M#{urls => maps:put(?GOOGLE, Val, maps:get(urls, M, #{}))});
+info([_|T], M)                    -> info(T, M);
+info([], M)                       -> M.
 
-	Urls =
-		begin
-			Urls1 =
-				case pt_map:find(?URLS, RawInfo) of
-					undefined ->
-						#{};
-					_ ->
-						maps:from_list(
-							lists:map(
-								fun(M) ->
-									{maps:get(?LABEL, M), maps:get(?VALUE, M)}
-								end,
-								maps:get(?URLS, RawInfo)))
-				end,
-			
-			Urls2 =
-				case pt_map:find(?URL, RawInfo) of
-					undefined ->
-						Urls1;
-					Val ->
-						Urls1#{?GOOGLE => Val}
-				end,
+%% ==================================================================
+%% Internal functions
+%% ==================================================================
 
-			case pt_map:is_empty(Urls2) of
-				true -> undefined;
-				_    -> Urls2
-			end
-		end,
-	
-	[EMail|_] = [Val || #{?VALUE := Val, ?TYPE := ?ACCOUNT} <- pt_map:get(?EMAILS, RawInfo)],
+-spec name(pal_authentication:rawdata(), map()) -> map().
+name([{?GINVEN_NAME, Val}|T], M) -> name(T, M#{first_name => Val});
+name([{?FAMILY_NAME, Val}|T], M) -> name(T, M#{last_name => Val});
+name([_|T], M)                   -> name(T, M);
+name([], M)                      -> M.
 
-	Put(name, pt_map:get(?DISPLAY_NAME, RawInfo),
-		Put(first_name, pt_map:get_in([?NAME, ?GINVEN_NAME], RawInfo),
-			Put(last_name, pt_map:get_in([?NAME, ?FAMILY_NAME], RawInfo),
-				Put(image, pt_map:get_in([?IMAGE, ?URL], RawInfo),
-					Put(email, EMail,
-						Put(urls, Urls, #{})))))).
+-spec image(pal_authentication:rawdata(), map()) -> map().
+image([{?URL, Val}|T], M) -> image(T, M#{image => Val});
+image([_|T], M)           -> image(T, M);
+image([], M)              -> M.
 
--spec extra(workflow()) -> map().
-extra(W) ->
-	#{raw_info => pal_authentication:raw_info(W)}.
+-spec urls(list(pal_authentication:rawdata()), map()) -> map().
+urls([Val|T], M) -> urls(T, url(Val, M));
+urls([], M)      -> M.
+
+-spec url(pal_authentication:rawdata(), map()) -> map().
+url(L, M) ->
+	maps:put(
+		pt_kvlist:get(?LABEL, L),
+		pt_kvlist:get(?VALUE, L),
+		M).
 

@@ -6,7 +6,6 @@
 	{applications, [
 		kernel,
 		stdlib,
-		hackney,
 		pal_oauth2
 	]},
 	{env, []}
