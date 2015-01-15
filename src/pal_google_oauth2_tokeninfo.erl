@@ -1,7 +1,7 @@
 %% ------------------------------------------------------------------
 %% The MIT License
 %%
-%% Copyright (c) 2014 Andrei Nesterov <ae.nesterov@gmail.com>
+%% Copyright (c) 2014-2015 Andrei Nesterov <ae.nesterov@gmail.com>
 %%
 %% Permission is hereby granted, free of charge, to any person obtaining a copy
 %% of this software and associated documentation files (the "Software"), to
@@ -24,14 +24,18 @@
 
 -module(pal_google_oauth2_tokeninfo).
 -behaviour(pal_authentication).
+-behaviour(pal_workflow).
+
+%% Workflow callbacks
+-export([
+	decl/0
+]).
 
 %% Authentication callbacks
 -export([
-	init/1,
-	authenticate/3,
+	authenticate/4,
 	uid/1,
-	info/1,
-	extra/1
+	info/2
 ]).
 
 %% Definitions
@@ -39,62 +43,48 @@
 -define(ID_TOKEN, <<"id_token">>).
 -define(USER_ID, <<"user_id">>).
 -define(EMAIL, <<"email">>).
--define(VERIFIED_EMAIL, <<"verified_email">>).
+-define(EMAIL_VERIFIED, <<"email_verified">>).
 
 %% Types
--type input()    :: #{credentials => #{id_token => binary()}}.
--type workflow() :: pal_authentication:workflow().
+-type data() :: #{id_token => binary()}.
 
--record(state, {
-	req_opts :: undefined | list()
-}).
+%% ==================================================================
+%% Workflow callbacks
+%% ==================================================================
+
+-spec decl() -> pt_workflow:declaration().
+decl() ->
+	Opts =
+		#{request_options => [{follow_redirect, true}]},
+
+	{pal_authentication, ?MODULE, Opts}.
 
 %% ==================================================================
 %% Authentication callbacks
 %% ==================================================================
 
--spec init(pal_workflow:options()) -> pal_workflow:handler(workflow()).
-init(Opts) ->
-	State = #state{req_opts = pt_mlist:get(request_options, Opts, [{follow_redirect, true}])},
-	pal_authentication:init({{?MODULE, State}, Opts}).
-
--spec authenticate(input(), Req, workflow()) -> {pal_workflow:response(), Req} when Req :: cowboy_req:req().
-authenticate(#{credentials := #{id_token := Token}}, Req, W) ->
+-spec authenticate(list(module()), data(), map(), map()) -> pal_authentication:result().
+authenticate(_, #{id_token := Token}, _, #{request_options := ReqOpts}) ->
 	Uri = <<?INFO_URI/binary, $?, ?ID_TOKEN/binary, $=, Token/binary>>,
-	State = pal_authentication:handler_state(W),
-	Resp =
-		case hackney:get(Uri, [], <<>>, State#state.req_opts) of
-			{ok, 200, _, Ref} ->
-				pal_oauth2:from_json(Ref, fun(M) ->
-					M
-				end);
-			{ok, _, _, Ref} ->
-				pal_oauth2:from_json(Ref, fun(M) ->
-					{fail, M}
-				end);
-			{error, Reason} ->
-				Message = <<"Google TokenInfo request failed.">>,
-				error_logger:error_report([{message, Message}, {reason, Reason}]),
-				{fail, Message}
-		end,
-	
-	{Resp, Req}.
-
--spec uid(workflow()) -> binary().
-uid(W) ->
-	pt_map:get(?USER_ID, pal_authentication:raw_info(W)).
-
--spec info(workflow()) -> map().
-info(W) ->
-	RawInfo = pal_authentication:raw_info(W),
-	case pt_map:get(?VERIFIED_EMAIL, RawInfo, false) of
-		true ->
-			#{email => pt_map:find(?EMAIL, RawInfo)};
-		false ->
-			#{}
+	case hackney:get(Uri, [], <<>>, ReqOpts) of
+		{ok, 200, _, Ref} ->
+			{ok, Body} = hackney:body(Ref),
+			{ok, jsx:decode(Body)};
+		{ok, _, _, Ref} ->
+			{ok, Body} = hackney:body(Ref),
+			{error, {google_oauth2, jsx:decode(Body)}};
+		{error, Reason} ->
+			throw({bad_req, Reason})
 	end.
 
--spec extra(workflow()) -> map().
-extra(W) ->
-	#{raw_info => pal_authentication:raw_info(W)}.
+-spec uid(pal_authentication:rawdata()) -> binary().
+uid(Data) ->
+	pt_kvlist:get(?USER_ID, Data).
+
+-spec info(pal_authentication:rawdata(), map()) -> map().
+info(Data, M) ->
+	case pt_kvlist:find(?EMAIL_VERIFIED, Data) of
+		{ok, true} -> M#{email => pt_kvlist:get(?EMAIL, Data)};
+		_          -> M
+	end.
 
