@@ -1,8 +1,8 @@
 # Pragmatic Authentication Library: Google OAuth2 workflows
 
-The collection of Google OAuth2 workflows for [PAL][pal].
+Collection of Google OAuth2 workflows for [PAL][pal].
 
-### 1. The Google Login (OAuth2 Authorization Code Grant) workflow
+### 1. Google Login (OAuth2 Authorization Code Grant) workflow
 
 For details, read the Google [documentation][google-authcode].
 
@@ -52,7 +52,7 @@ the authentication schema would be returned:
 
 See the complete example using PAL and [Cowboy][cowboy] HTTP server [here][pal-example].
 
-### 2. The Google TokenInfo (an ID token validation) workflow
+### 2. Google TokenInfo (an ID token validation) workflow
 
 #### Options
 
@@ -81,7 +81,7 @@ the authentication schema would be returned:
 
 See the complete example using PAL and [Cowboy][cowboy] HTTP server [here][pal-example].
 
-### 3. The Google+ People (Obtaining user profile information) workflow
+### 3. Google+ People (Obtaining user profile information) workflow
 
 #### Options
 

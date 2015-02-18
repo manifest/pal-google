@@ -1,6 +1,7 @@
 {application, pal_google_oauth2, [
 	{description, "Pragmatic Authentication Library: Google OAuth2 workflows"},
 	{vsn, "0.1.0"},
+	{id, "git"},
 	{modules, []},
 	{registered, []},
 	{applications, [

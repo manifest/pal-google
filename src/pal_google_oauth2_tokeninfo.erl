@@ -1,4 +1,4 @@
-%% ------------------------------------------------------------------
+%% ----------------------------------------------------------------------------
 %% The MIT License
 %%
 %% Copyright (c) 2014-2015 Andrei Nesterov <ae.nesterov@gmail.com>
@@ -20,7 +20,7 @@
 %% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 %% FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 %% IN THE SOFTWARE.
-%% ------------------------------------------------------------------
+%% ----------------------------------------------------------------------------
 
 -module(pal_google_oauth2_tokeninfo).
 -behaviour(pal_authentication).
@@ -48,20 +48,20 @@
 %% Types
 -type data() :: #{id_token => binary()}.
 
-%% ==================================================================
+%% ============================================================================
 %% Workflow callbacks
-%% ==================================================================
+%% ============================================================================
 
--spec decl() -> pt_workflow:declaration().
+-spec decl() -> pal_workflow:declaration().
 decl() ->
 	Opts =
 		#{request_options => [{follow_redirect, true}]},
 
 	{pal_authentication, ?MODULE, Opts}.
 
-%% ==================================================================
+%% ============================================================================
 %% Authentication callbacks
-%% ==================================================================
+%% ============================================================================
 
 -spec authenticate(list(module()), data(), map(), map()) -> pal_authentication:result().
 authenticate(_, #{id_token := Token}, _, #{request_options := ReqOpts}) ->
