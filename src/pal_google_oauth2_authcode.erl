@@ -1,4 +1,4 @@
-%% ------------------------------------------------------------------
+%% ----------------------------------------------------------------------------
 %% The MIT License
 %%
 %% Copyright (c) 2014-2015 Andrei Nesterov <ae.nesterov@gmail.com>
@@ -20,7 +20,7 @@
 %% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 %% FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 %% IN THE SOFTWARE.
-%% ------------------------------------------------------------------
+%% ----------------------------------------------------------------------------
 
 -module(pal_google_oauth2_authcode).
 -behaviour(pal_workflow).
@@ -43,11 +43,11 @@
 -define(OPENID, <<"openid">>).
 -define(EMAIL, <<"email">>).
 
-%% ==================================================================
+%% ============================================================================
 %% Workflow callbacks
-%% ==================================================================
+%% ============================================================================
 
--spec decl() -> pt_workflow:declaration().
+-spec decl() -> pal_workflow:declaration().
 decl() ->
 	Opts =
 		#{authorization_uri => <<"https://accounts.google.com/o/oauth2/auth">>,
@@ -56,9 +56,9 @@ decl() ->
 
 	{pal_oauth2_authcode, ?MODULE, Opts}.
 
-%% ==================================================================
+%% ============================================================================
 %% Authentication workflow callbacks
-%% ==================================================================
+%% ============================================================================
 
 -spec credentials(pal_authentication:rawdata(), map()) -> map().
 credentials([{?ACCESS_TOKEN, Val}|T], M) -> credentials(T, M#{access_token => Val});
