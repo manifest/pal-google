@@ -35,7 +35,8 @@
 -export([
 	authenticate/4,
 	uid/1,
-	info/2
+	info/2,
+	extra/2
 ]).
 
 %% Definitions
@@ -98,10 +99,14 @@ uid(Data) ->
 info([{?DISPLAY_NAME, Val}|T], M) -> info(T, M#{name => Val});
 info([{?NAME, Val}|T], M)         -> info(T, name(Val, M));
 info([{?IMAGE, Val}|T], M)        -> info(T, image(Val, M));
-info([{?URLS, Val}|T], M)         -> info(T, M#{urls => urls(Val, maps:get(urls, M, #{}))});
 info([{?URL, Val}|T], M)          -> info(T, M#{urls => maps:put(?GOOGLE, Val, maps:get(urls, M, #{}))});
 info([_|T], M)                    -> info(T, M);
 info([], M)                       -> M.
+
+-spec extra(pal_authentication:rawdata(), map()) -> map().
+extra([{?URLS, Val}|T], M) -> extra(T, M#{urls => urls(Val, maps:get(urls, M, #{}))});
+extra([_|T], M)            -> extra(T, M);
+extra([], M)               -> M.
 
 %% ============================================================================
 %% Internal functions
