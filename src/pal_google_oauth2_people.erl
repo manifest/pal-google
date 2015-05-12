@@ -53,10 +53,10 @@
 -define(DISPLAY_NAME, <<"displayName">>).
 -define(FAMILY_NAME, <<"familyName">>).
 -define(GINVEN_NAME, <<"givenName">>).
+-define(GENDER, <<"gender">>).
 -define(IMAGE, <<"image">>).
 -define(EMAIL, <<"email">>).
 -define(EMAILS, <<"emails">>).
--define(VERIFIED_EMAIL, <<"verified_email">>).
 -define(GOOGLE, <<"google">>).
 
 %% Types
@@ -98,15 +98,18 @@ uid(Data) ->
 -spec info(pal_authentication:rawdata(), map()) -> map().
 info([{?DISPLAY_NAME, Val}|T], M) -> info(T, M#{name => Val});
 info([{?NAME, Val}|T], M)         -> info(T, name(Val, M));
+info([{?GENDER, Val}|T], M)       -> info(T, M#{gender => Val});
+info([{?EMAILS, Val}|T], M)       -> info(T, account_email(Val, M));
 info([{?IMAGE, Val}|T], M)        -> info(T, image(Val, M));
-info([{?URL, Val}|T], M)          -> info(T, M#{urls => maps:put(?GOOGLE, Val, maps:get(urls, M, #{}))});
+info([{?URL, Val}|T], M)          -> info(T, M#{urls => maps:put(?GOOGLE, Val, #{})});
 info([_|T], M)                    -> info(T, M);
 info([], M)                       -> M.
 
 -spec extra(pal_authentication:rawdata(), map()) -> map().
-extra([{?URLS, Val}|T], M) -> extra(T, M#{urls => urls(Val, maps:get(urls, M, #{}))});
-extra([_|T], M)            -> extra(T, M);
-extra([], M)               -> M.
+extra([{?URLS, Val}|T], M)   -> extra(T, urls(Val, M));
+extra([{?EMAILS, Val}|T], M) -> extra(T, emails(Val, M));
+extra([_|T], M)              -> extra(T, M);
+extra([], M)                 -> M.
 
 %% ============================================================================
 %% Internal functions
@@ -123,14 +126,52 @@ image([{?URL, Val}|T], M) -> image(T, M#{image => Val});
 image([_|T], M)           -> image(T, M);
 image([], M)              -> M.
 
+-spec account_email(list(pal_authentication:rawdata()), map()) -> map().
+account_email(Emails, M) ->
+	lists:foldl(
+		fun(Email, Acc) ->
+			case pt_kvlist:get(?TYPE, Email) of
+				?ACCOUNT -> Acc#{email => pt_kvlist:get(?VALUE, Email)};
+				_        -> Acc
+			end
+		end,
+		M, Emails).
+
+-spec emails(list(pal_authentication:rawdata()), map()) -> map().
+emails(EMails, M) ->
+	Val =
+		lists:foldl(
+			fun(EMail, Acc) ->
+				case email(EMail, #{}) of
+					#{type := ?ACCOUNT} -> Acc;
+					M                   -> [M|Acc]
+				end
+			end, [], EMails),
+
+	case length(Val) > 0 of
+		true -> M#{emails => Val};
+		_    -> M
+	end.
+
+-spec email(pal_authentication:rawdata(), map()) -> map().
+email([{?TYPE, Val}|T], M)  -> email(T, M#{type => Val});
+email([{?VALUE, Val}|T], M) -> email(T, M#{value => Val});
+email([_|T], M)             -> email(T, M);
+email([], M)								-> M.
+
 -spec urls(list(pal_authentication:rawdata()), map()) -> map().
-urls([Val|T], M) -> urls(T, url(Val, M));
-urls([], M)      -> M.
+urls(Urls, M) ->
+	Val =
+		lists:map(
+			fun(Url) -> url(Url, #{}) end,
+			Urls),
+
+	M#{urls => Val}.
 
 -spec url(pal_authentication:rawdata(), map()) -> map().
-url(L, M) ->
-	maps:put(
-		pt_kvlist:get(?LABEL, L),
-		pt_kvlist:get(?VALUE, L),
-		M).
+url([{?TYPE, Val}|T], M)  -> url(T, M#{type => Val});
+url([{?LABEL, Val}|T], M) -> url(T, M#{label => Val});
+url([{?VALUE, Val}|T], M) -> url(T, M#{value => Val});
+url([_|T], M)             -> url(T, M);
+url([], M)                -> M.
 
