@@ -57,7 +57,6 @@
 -define(IMAGE, <<"image">>).
 -define(EMAIL, <<"email">>).
 -define(EMAILS, <<"emails">>).
--define(GOOGLE, <<"google">>).
 
 %% Types
 -type data() :: #{access_token => binary()}.
@@ -101,12 +100,12 @@ info([{?NAME, Val}|T], M)         -> info(T, name(Val, M));
 info([{?GENDER, Val}|T], M)       -> info(T, M#{gender => Val});
 info([{?EMAILS, Val}|T], M)       -> info(T, account_email(Val, M));
 info([{?IMAGE, Val}|T], M)        -> info(T, image(Val, M));
-info([{?URL, Val}|T], M)          -> info(T, M#{urls => maps:put(?GOOGLE, Val, #{})});
+info([{?URL, Val}|T], M)          -> info(T, M#{uri => Val});
 info([_|T], M)                    -> info(T, M);
 info([], M)                       -> M.
 
 -spec extra(pal_authentication:rawdata(), map()) -> map().
-extra([{?URLS, Val}|T], M)   -> extra(T, urls(Val, M));
+extra([{?URLS, Val}|T], M)   -> extra(T, uris(Val, M));
 extra([{?EMAILS, Val}|T], M) -> extra(T, emails(Val, M));
 extra([_|T], M)              -> extra(T, M);
 extra([], M)                 -> M.
@@ -159,19 +158,19 @@ email([{?VALUE, Val}|T], M) -> email(T, M#{value => Val});
 email([_|T], M)             -> email(T, M);
 email([], M)								-> M.
 
--spec urls(list(pal_authentication:rawdata()), map()) -> map().
-urls(Urls, M) ->
+-spec uris(list(pal_authentication:rawdata()), map()) -> map().
+uris(Urls, M) ->
 	Val =
 		lists:map(
-			fun(Url) -> url(Url, #{}) end,
+			fun(Url) -> uri(Url, #{}) end,
 			Urls),
 
-	M#{urls => Val}.
+	M#{uris => Val}.
 
--spec url(pal_authentication:rawdata(), map()) -> map().
-url([{?TYPE, Val}|T], M)  -> url(T, M#{type => Val});
-url([{?LABEL, Val}|T], M) -> url(T, M#{label => Val});
-url([{?VALUE, Val}|T], M) -> url(T, M#{value => Val});
-url([_|T], M)             -> url(T, M);
-url([], M)                -> M.
+-spec uri(pal_authentication:rawdata(), map()) -> map().
+uri([{?TYPE, Val}|T], M)  -> uri(T, M#{type => Val});
+uri([{?LABEL, Val}|T], M) -> uri(T, M#{label => Val});
+uri([{?VALUE, Val}|T], M) -> uri(T, M#{value => Val});
+uri([_|T], M)             -> uri(T, M);
+uri([], M)                -> M.
 
