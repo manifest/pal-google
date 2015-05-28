@@ -44,10 +44,10 @@ If an execution of the `pal:authenticate/{2,3}` function were successful,
 the authentication schema would be returned:
 
 ```erlang
-#{access_token => <<"...">>,
-  expires_in   => 3600,
-  id_token     => <<"...">>,
-  token_type   => <<"Bearer">>}
+#{access_token => <<"...">>, 
+  token_type => <<"Bearer">>,
+  expires_in => 3599,
+  id_token => <<"...">>}
 ```
 
 See the complete example using PAL and [Cowboy][cowboy] HTTP server [here][pal-example].
@@ -75,8 +75,9 @@ If an execution of the `pal:authenticate/{2,3}` function were successful,
 the authentication schema would be returned:
 
 ```erlang
-#{uid  => <<"...">>,
-  info => #{email => <<"...">>}}
+#{uid => <<"...">>,
+  info =>
+    #{email => <<"john@example.com">>}}
 ```
 
 See the complete example using PAL and [Cowboy][cowboy] HTTP server [here][pal-example].
@@ -104,14 +105,15 @@ If an execution of the `pal:authenticate/{2,3}` function were successful,
 the authentication schema would be returned:
 
 ```erlang
-#{uid  => <<"...">>,
+#{uid => <<"...">>,
   info =>
-    #{email      => <<"...">>,
-      name       => <<"John Doe">>,
+    #{name => <<"John Doe">>,
       first_name => <<"John">>,
-      last_name  => <<"Doe">>,
-      image      => <<"https://lh4.googleusercontent.com/...">>,
-      urls       => #{<<"google">> => <<"https://plus.google.com/...">>}}}
+      last_name => <<"Doe">>,
+      gender => <<"male">>,
+      email => <<"john@example.com">>,
+      image => <<"https://lh3.googleusercontent.com/...">>,
+      uri => <<"https://plus.google.com/...">>}}
 ```
 
 See the complete example using PAL and [Cowboy][cowboy] HTTP server [here][pal-example].
