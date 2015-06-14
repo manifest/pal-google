@@ -78,7 +78,7 @@ authenticate(Hs, #{id_token := Token} = Data, Meta, State) ->
 			{ok, jsx:decode(Body)};
 		{ok, _, _, Ref} ->
 			{ok, Body} = hackney:body(Ref),
-			{error, {google_openid, jsx:decode(Body)}};
+			{error, {google_openid, Body}};
 		{error, Reason} ->
 			exit({Reason, {?MODULE, authenticate, [Hs, Data, Meta, State]}})
 	end.

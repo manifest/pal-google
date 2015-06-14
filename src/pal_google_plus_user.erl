@@ -91,7 +91,7 @@ authenticate(Hs, #{access_token := Token} = Data, Meta, State) ->
 			{ok, jsx:decode(Body)};
 		{ok, _, _, Ref} ->
 			{ok, Body} = hackney:body(Ref),
-			{error, {google_plus, jsx:decode(Body)}};
+			{error, {google_plus, Body}};
 		{error, Reason} ->
 			exit({Reason, {?MODULE, authenticate, [Hs, Data, Meta, State]}})
 	end.
