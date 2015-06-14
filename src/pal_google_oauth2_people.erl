@@ -40,7 +40,8 @@
 ]).
 
 %% Definitions
--define(INFO_URI, <<"https://www.googleapis.com/plus/v1/people/me">>).
+-define(GOOGLE_PLUS_API_URI, <<"https://www.googleapis.com/plus/v1">>).
+
 -define(ACCESS_TOKEN, <<"access_token">>).
 -define(ID, <<"id">>).
 -define(URL, <<"url">>).
@@ -77,8 +78,13 @@ decl() ->
 %% ============================================================================
 
 -spec authenticate(list(module()), data(), map(), map()) -> pal_authentication:result().
-authenticate(_, #{access_token := Token}, _, #{request_options := ReqOpts}) ->
-	Uri = <<?INFO_URI/binary, $?, ?ACCESS_TOKEN/binary, $=, Token/binary>>,
+authenticate(Hs, #{access_token := Token} = Data, Meta, State) ->
+	#{request_options := ReqOpts} = State,
+
+	Uri =
+		<<?GOOGLE_PLUS_API_URI/binary, "/people/me",
+				$?, ?ACCESS_TOKEN/binary, $=, Token/binary>>,
+
 	case hackney:get(Uri, [], <<>>, ReqOpts) of
 		{ok, 200, _, Ref} ->
 			{ok, Body} = hackney:body(Ref),
@@ -87,7 +93,7 @@ authenticate(_, #{access_token := Token}, _, #{request_options := ReqOpts}) ->
 			{ok, Body} = hackney:body(Ref),
 			{error, {google_plus, jsx:decode(Body)}};
 		{error, Reason} ->
-			throw({bad_req, Reason})
+			exit({Reason, {?MODULE, authenticate, [Hs, Data, Meta, State]}})
 	end.
 
 -spec uid(pal_authentication:rawdata()) -> binary().

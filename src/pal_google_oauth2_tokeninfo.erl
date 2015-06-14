@@ -39,7 +39,8 @@
 ]).
 
 %% Definitions
--define(INFO_URI, <<"https://www.googleapis.com/oauth2/v1/tokeninfo">>).
+-define(GOOGLE_OPENID_API_URI, <<"https://www.googleapis.com/oauth2/v1">>).
+
 -define(ID_TOKEN, <<"id_token">>).
 -define(USER_ID, <<"user_id">>).
 -define(EMAIL, <<"email">>).
@@ -64,8 +65,13 @@ decl() ->
 %% ============================================================================
 
 -spec authenticate(list(module()), data(), map(), map()) -> pal_authentication:result().
-authenticate(_, #{id_token := Token}, _, #{request_options := ReqOpts}) ->
-	Uri = <<?INFO_URI/binary, $?, ?ID_TOKEN/binary, $=, Token/binary>>,
+authenticate(Hs, #{id_token := Token} = Data, Meta, State) ->
+	#{request_options := ReqOpts} = State,
+
+	Uri =
+		<<?GOOGLE_OPENID_API_URI/binary, "/tokeninfo",
+				$?, ?ID_TOKEN/binary, $=, Token/binary>>,
+
 	case hackney:get(Uri, [], <<>>, ReqOpts) of
 		{ok, 200, _, Ref} ->
 			{ok, Body} = hackney:body(Ref),
@@ -74,7 +80,7 @@ authenticate(_, #{id_token := Token}, _, #{request_options := ReqOpts}) ->
 			{ok, Body} = hackney:body(Ref),
 			{error, {google_oauth2, jsx:decode(Body)}};
 		{error, Reason} ->
-			throw({bad_req, Reason})
+			exit({Reason, {?MODULE, authenticate, [Hs, Data, Meta, State]}})
 	end.
 
 -spec uid(pal_authentication:rawdata()) -> binary().
