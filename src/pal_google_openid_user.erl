@@ -22,7 +22,7 @@
 %% IN THE SOFTWARE.
 %% ----------------------------------------------------------------------------
 
--module(pal_google_oauth2_tokeninfo).
+-module(pal_google_openid_user).
 -behaviour(pal_authentication).
 -behaviour(pal_workflow).
 
@@ -78,7 +78,7 @@ authenticate(Hs, #{id_token := Token} = Data, Meta, State) ->
 			{ok, jsx:decode(Body)};
 		{ok, _, _, Ref} ->
 			{ok, Body} = hackney:body(Ref),
-			{error, {google_oauth2, jsx:decode(Body)}};
+			{error, {google_openid, jsx:decode(Body)}};
 		{error, Reason} ->
 			exit({Reason, {?MODULE, authenticate, [Hs, Data, Meta, State]}})
 	end.

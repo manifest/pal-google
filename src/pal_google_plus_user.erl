@@ -22,7 +22,7 @@
 %% IN THE SOFTWARE.
 %% ----------------------------------------------------------------------------
 
--module(pal_google_oauth2_people).
+-module(pal_google_plus_user).
 -behaviour(pal_authentication).
 -behaviour(pal_workflow).
 
