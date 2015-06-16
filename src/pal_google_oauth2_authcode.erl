@@ -41,6 +41,7 @@
 -define(TOKEN_TYPE, <<"token_type">>).
 -define(EXPIRES_IN, <<"expires_in">>).
 -define(OPENID, <<"openid">>).
+-define(PROFILE, <<"profile">>).
 -define(EMAIL, <<"email">>).
 
 %% ============================================================================
@@ -52,7 +53,7 @@ decl() ->
 	Opts =
 		#{authorization_uri => <<"https://accounts.google.com/o/oauth2/auth">>,
 			access_token_uri  => <<"https://accounts.google.com/o/oauth2/token">>,
-			scope             => [?OPENID, ?EMAIL]},
+			scope             => [?OPENID, ?PROFILE, ?EMAIL]},
 
 	{pal_oauth2_authcode, ?MODULE, Opts}.
 

@@ -1,0 +1,13 @@
+{application, pal_google, [
+	{description, "Pragmatic Authentication Library: Google workflows"},
+	{vsn, "0.3.0"},
+	{id, "git"},
+	{modules, []},
+	{registered, []},
+	{applications, [
+		kernel,
+		stdlib,
+		pal_oauth2
+	]},
+	{env, []}
+]}.
