@@ -1,4 +1,4 @@
-PROJECT = pal_google_oauth2
+PROJECT = pal_google
 
 DEPS = pal_oauth2
 dep_pal_oauth2 = git git://github.com/manifest/pal-oauth2.git develop
