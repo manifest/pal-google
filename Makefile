@@ -1,7 +1,7 @@
 PROJECT = pal_google
 
 DEPS = pal_oauth2
-dep_pal_oauth2 = git git://github.com/manifest/pal-oauth2.git v0.3.0
+dep_pal_oauth2 = git git://github.com/manifest/pal-oauth2.git v0.3.1
 
 PLT_APPS = pt pal jsx hackney
 SHELL_OPTS = \
